@@ -186,10 +186,10 @@ export default function App() {
 }
 
 var pageStyle = { padding: 20, fontFamily: "Arial, sans-serif", maxWidth: 500, margin: "0 auto" };
-var statsBox = { display: "flex", justifyContent: "space-around", background: "#f5f5f5", borderRadius: 12, padding: 16, marginBottom: 20 };
-var statItem = { textAlign: "center" };
-var statNum = { display: "block", fontSize: 24, fontWeight: "bold", color: "#2d8a4e" };
-var statLabel = { fontSize: 11, color: "#888" };
+var statsBox = { display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, background: "#f5f5f5", borderRadius: 12, padding: 20, marginBottom: 20 };
+var statItem = { textAlign: "center", borderRight: "1px solid #ddd", paddingRight: 8 };
+var statNum = { display: "block", fontSize: 28, fontWeight: "bold", color: "#2d8a4e", marginBottom: 4 };
+var statLabel = { display: "block", fontSize: 12, color: "#888", fontWeight: "bold" };
 var btnPrimary = { display: "block", width: "100%", padding: "14px", fontSize: 16, borderRadius: 10, border: "none", background: "#2d8a4e", color: "#fff", cursor: "pointer", marginBottom: 10, fontWeight: "bold" };
 var btnSecondary = { display: "block", width: "100%", padding: "14px", fontSize: 16, borderRadius: 10, border: "2px solid #333", background: "#fff", cursor: "pointer", marginBottom: 10 };
 var btnGreen = { padding: "12px 24px", fontSize: 16, borderRadius: 8, border: "none", background: "#2d8a4e", color: "#fff", cursor: "pointer", fontWeight: "bold" };
