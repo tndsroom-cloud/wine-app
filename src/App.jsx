@@ -43,7 +43,7 @@ export default function App() {
   function sendToAI(base64) {
     setLoading(true);
     setWine(null);
-    fetch("/api/scan", {
+    fetch("https://wine-scan.tnd-sroom.workers.dev", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ image: base64, mediaType: "image/jpeg" })
