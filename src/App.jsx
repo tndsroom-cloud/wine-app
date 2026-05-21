@@ -14,7 +14,7 @@ export default function App() {
     var reader = new FileReader();
     reader.onload = function(ev) {
       setPhoto(ev.target.result);
-      setWine("Terra Scuoli Barolo 2021");
+      setWine("(wine name will come from AI)");
       setQuantity(1);
     };
     reader.readAsDataURL(file);
@@ -61,6 +61,7 @@ export default function App() {
     setPhoto(null);
     setQuantity(1);
     setMode("home");
+    if (fileInput.current) fileInput.current.value = "";
   }
 
   if (mode === "home") {
@@ -104,7 +105,7 @@ export default function App() {
 
         {photo && (
           <div>
-            <img src={photo} style={{ maxWidth: "100%", borderRadius: 8, marginTop: 10 }} />
+            <img src={photo} alt="scanned" style={{ maxWidth: "100%", borderRadius: 8, marginTop: 10 }} />
           </div>
         )}
 
