@@ -240,19 +240,132 @@ function loadDashboard() {
     if (!dashData) return <div style={pageStyle}><p>Loading dashboard...</p></div>;
 
     var totalBottles = dashData.inventory.reduce(function(s, i) { return s + i.qty_in_stock; }, 0);
-    var totalSpent = dashData.orders.reduce(function(s, o) { return s + o.total; }, 0);
     var ratedWines = dashData.ratings.filter(function(r) { return r.rating !== null; });
     var avgRating = ratedWines.length > 0 ? (ratedWines.reduce(function(s, r) { return s + r.rating; }, 0) / ratedWines.length).toFixed(1) : "\u2014";
     var maxCountry = dashData.byCountry.length > 0 ? dashData.byCountry[0].total : 1;
     var maxCategory = dashData.byCategory.length > 0 ? dashData.byCategory[0].total : 1;
 
+    var ratingsMap = {};
+    dashData.ratings.forEach(function(r) { ratingsMap[r.bottle_name] = r; });
+
     var filtered = dashData.inventory;
     if (search) {
       var q = search.toLowerCase();
       filtered = dashData.inventory.filter(function(item) {
-        return item.name.toLowerCase().indexOf(q) >= 0 || (item.country && item.country.toLowerCase().indexOf(q) >= 0) || (item.winery && item.winery.toLowerCase().indexOf(q) >= 0) || (item.grape && item.grape.toLowerCase().indexOf(q) >= 0);
+        return item.name.toLowerCase().indexOf(q) >= 0 || (item.country && item.country.toLowerCase().indexOf(q) >= 0) || (item.winery && item.winery.toLowerCase().indexOf(q) >= 0) || (item.grape && item.grape.toLowerCase().indexOf(q) >= 0) || (item.category && item.category.toLowerCase().indexOf(q) >= 0);
       });
     }
+
+    return (
+      <div style={{ padding: 20, fontFamily: "Arial, sans-serif", maxWidth: 1200, margin: "0 auto" }}>
+        <h1 style={{ textAlign: "center" }}>Dashboard</h1>
+
+        <div style={statsBox}>
+          <div style={statItem}><span style={statNum}>{totalBottles}</span><span style={statLabel}>Bottles</span></div>
+          <div style={statItem}><span style={statNum}>{dashData.inventory.length}</span><span style={statLabel}>Wines</span></div>
+          <div style={statItem}><span style={statNum}>{dashData.orders.length}</span><span style={statLabel}>Orders</span></div>
+          <div style={statItemLast}><span style={statNum}>{avgRating}</span><span style={statLabel}>Avg Rating</span></div>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+          <div style={sectionCard}>
+            <h3 style={sectionTitle}>By Country</h3>
+            {dashData.byCountry.map(function(item, i) {
+              var pct = Math.round((item.total / maxCountry) * 100);
+              return (
+                <div key={item.country} style={{ marginBottom: 8 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 2 }}>
+                    <span>{item.country || "Unknown"}</span>
+                    <span style={{ fontWeight: "bold" }}>{item.total}</span>
+                  </div>
+                  <div style={{ background: "#eee", borderRadius: 4, height: 14 }}>
+                    <div style={{ background: barColors[i % barColors.length], borderRadius: 4, height: 14, width: pct + "%" }}></div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={sectionCard}>
+            <h3 style={sectionTitle}>By Category</h3>
+            {dashData.byCategory.map(function(item, i) {
+              var pct = Math.round((item.total / maxCategory) * 100);
+              return (
+                <div key={item.category} style={{ marginBottom: 8 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 2 }}>
+                    <span>{item.category || "Unknown"}</span>
+                    <span style={{ fontWeight: "bold" }}>{item.total}</span>
+                  </div>
+                  <div style={{ background: "#eee", borderRadius: 4, height: 14 }}>
+                    <div style={{ background: barColors[i % barColors.length], borderRadius: 4, height: 14, width: pct + "%" }}></div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {dashData.topRated.length > 0 && (
+          <div style={sectionCard}>
+            <h3 style={sectionTitle}>Top Rated</h3>
+            {dashData.topRated.map(function(item) {
+              return (
+                <div key={item.bottle_name} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #eee", fontSize: 14 }}>
+                  <div>
+                    <b>{item.bottle_name}</b>
+                    {item.country && <span style={{ color: "#888", fontSize: 12 }}> ({item.country})</span>}
+                  </div>
+                  <span style={{ fontWeight: "bold", color: "#2d8a4e" }}>{item.rating}/10</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <div style={sectionCard}>
+          <h3 style={sectionTitle}>Full Inventory</h3>
+          <input type="text" value={search} onChange={function(e) { setSearch(e.target.value); }} placeholder="Search by name, country, winery, grape..." style={{ width: "100%", padding: 10, fontSize: 14, borderRadius: 8, border: "1px solid #ccc", marginBottom: 12, boxSizing: "border-box" }} />
+          <p style={{ fontSize: 13, color: "#888", marginBottom: 8 }}>Showing {filtered.length} of {dashData.inventory.length} wines</p>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: "#2d8a4e", color: "#fff" }}>
+                  <th style={thStyle}>Name</th>
+                  <th style={thStyle}>Winery</th>
+                  <th style={thStyle}>Country</th>
+                  <th style={thStyle}>Grape</th>
+                  <th style={thStyle}>Category</th>
+                  <th style={thStyle}>Qty</th>
+                  <th style={thStyle}>Rating</th>
+                  <th style={thStyle}>Rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map(function(item, i) {
+                  var r = ratingsMap[item.name];
+                  var rating = r && r.rating ? r.rating : null;
+                  var notes = r && r.notes ? r.notes : "";
+                  return (
+                    <tr key={item.id} style={{ background: i % 2 === 0 ? "#fff" : "#f5f5f5", borderBottom: "1px solid #eee" }}>
+                      <td style={tdStyle}><b>{item.name}</b></td>
+                      <td style={tdStyle}>{item.winery}</td>
+                      <td style={tdStyle}>{item.country}</td>
+                      <td style={tdStyle}>{item.grape}</td>
+                      <td style={tdStyle}>{item.category}</td>
+                      <td style={tdCenter}><span style={qtyBadge}>{item.qty_in_stock}</span></td>
+                      <td style={tdCenter}>{rating ? <span style={{ fontWeight: "bold", color: rating >= 7 ? "#2d8a4e" : rating >= 4 ? "#f39c12" : "#c0392b" }}>{rating}/10</span> : <span style={{ color: "#ccc" }}>--</span>}</td>
+                      <td style={tdCenter}><button onClick={function() { startRateFromDashboard(item.name); }} style={rateBtn}>⭐</button></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <button onClick={function() { setMode("home"); loadStats(); }} style={btnBack}>Back</button>
+      </div>
+    );
+  }
 
     return (
       <div style={{ padding: 20, fontFamily: "Arial, sans-serif", maxWidth: 800, margin: "0 auto" }}>
@@ -396,4 +509,6 @@ var qtyBadge = { background: "#2d8a4e", color: "#fff", borderRadius: 20, width: 
 var rateBtn = { background: "none", border: "1px solid #ddd", borderRadius: 6, padding: "4px 8px", fontSize: 16, cursor: "pointer" }
 var barColors = ["#2d8a4e","#c0392b","#2980b9","#f39c12","#8e44ad","#1abc9c","#d35400","#34495e","#e74c3c","#27ae60"];
 var sectionCard = { background: "#f9f9f9", padding: 16, borderRadius: 10, border: "1px solid #eee", marginBottom: 16 };
-var sectionTitle = { fontSize: 16, fontWeight: "bold", marginBottom: 12, color: "#333" };
+var sectionTitle = { fontSize: 16, fontWeight: "bold", marginBottom: 12, color: "#333" }var thStyle = { padding: "10px 8px", textAlign: "left", fontSize: 13, fontWeight: "bold", whiteSpace: "nowrap" };
+var tdStyle = { padding: "8px", fontSize: 13, verticalAlign: "middle" };
+var tdCenter = { padding: "8px", fontSize: 13, textAlign: "center", verticalAlign: "middle" };
