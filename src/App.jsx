@@ -32,6 +32,8 @@ export default function App() {
   var [ratingName, setRatingName] = useState("");
   var [ratingScore, setRatingScore] = useState(0);
   var [ratingNotes, setRatingNotes] = useState("");
+var [dashData, setDashData] = useState(null);
+  var [search, setSearch] = useState("");
   var fileInput = useRef(null);
 
   function loadInventory() {
@@ -39,6 +41,9 @@ export default function App() {
   }
 
   function loadStats() {
+function loadDashboard() {
+    fetch(API + "/dashboard").then(function(r) { return r.json(); }).then(setDashData);
+  }
     fetch(API + "/stats").then(function(r) { return r.json(); }).then(setStats);
   }
 
@@ -166,7 +171,7 @@ export default function App() {
         )}
         <button onClick={function() { setMode("scan"); }} style={btnPrimary}>Scan - Add Bottle</button>
         <button onClick={function() { setMode("drink"); }} style={btnSecondary}>Drink Bottle</button>
-        <button onClick={function() { setMode("dashboard"); loadInventory(); }} style={btnSecondary}>Dashboard</button>
+        <button onClick={function() { setMode("dashboard"); loadDashboard(); }} style={btnSecondary}>Dashboard</button>
       </div>
     );
   }
@@ -232,6 +237,114 @@ export default function App() {
   }
 
   if (mode === "dashboard") {
+    if (!dashData) return <div style={pageStyle}><p>Loading dashboard...</p></div>;
+
+    var totalBottles = dashData.inventory.reduce(function(s, i) { return s + i.qty_in_stock; }, 0);
+    var totalSpent = dashData.orders.reduce(function(s, o) { return s + o.total; }, 0);
+    var ratedWines = dashData.ratings.filter(function(r) { return r.rating !== null; });
+    var avgRating = ratedWines.length > 0 ? (ratedWines.reduce(function(s, r) { return s + r.rating; }, 0) / ratedWines.length).toFixed(1) : "\u2014";
+    var maxCountry = dashData.byCountry.length > 0 ? dashData.byCountry[0].total : 1;
+    var maxCategory = dashData.byCategory.length > 0 ? dashData.byCategory[0].total : 1;
+
+    var filtered = dashData.inventory;
+    if (search) {
+      var q = search.toLowerCase();
+      filtered = dashData.inventory.filter(function(item) {
+        return item.name.toLowerCase().indexOf(q) >= 0 || (item.country && item.country.toLowerCase().indexOf(q) >= 0) || (item.winery && item.winery.toLowerCase().indexOf(q) >= 0) || (item.grape && item.grape.toLowerCase().indexOf(q) >= 0);
+      });
+    }
+
+    return (
+      <div style={{ padding: 20, fontFamily: "Arial, sans-serif", maxWidth: 800, margin: "0 auto" }}>
+        <h1 style={{ textAlign: "center" }}>Dashboard</h1>
+
+        <div style={statsBox}>
+          <div style={statItem}><span style={statNum}>{totalBottles}</span><span style={statLabel}>Bottles</span></div>
+          <div style={statItem}><span style={statNum}>{dashData.inventory.length}</span><span style={statLabel}>Wines</span></div>
+          <div style={statItem}><span style={statNum}>{dashData.orders.length}</span><span style={statLabel}>Orders</span></div>
+          <div style={statItemLast}><span style={statNum}>{avgRating}</span><span style={statLabel}>Avg Rating</span></div>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+          <div style={sectionCard}>
+            <h3 style={sectionTitle}>By Country</h3>
+            {dashData.byCountry.map(function(item, i) {
+              var pct = Math.round((item.total / maxCountry) * 100);
+              return (
+                <div key={item.country} style={{ marginBottom: 8 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 2 }}>
+                    <span>{item.country || "Unknown"}</span>
+                    <span style={{ fontWeight: "bold" }}>{item.total}</span>
+                  </div>
+                  <div style={{ background: "#eee", borderRadius: 4, height: 14 }}>
+                    <div style={{ background: barColors[i % barColors.length], borderRadius: 4, height: 14, width: pct + "%" }}></div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div style={sectionCard}>
+            <h3 style={sectionTitle}>By Category</h3>
+            {dashData.byCategory.map(function(item, i) {
+              var pct = Math.round((item.total / maxCategory) * 100);
+              return (
+                <div key={item.category} style={{ marginBottom: 8 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 2 }}>
+                    <span>{item.category || "Unknown"}</span>
+                    <span style={{ fontWeight: "bold" }}>{item.total}</span>
+                  </div>
+                  <div style={{ background: "#eee", borderRadius: 4, height: 14 }}>
+                    <div style={{ background: barColors[i % barColors.length], borderRadius: 4, height: 14, width: pct + "%" }}></div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {dashData.topRated.length > 0 && (
+          <div style={sectionCard}>
+            <h3 style={sectionTitle}>Top Rated</h3>
+            {dashData.topRated.map(function(item) {
+              return (
+                <div key={item.bottle_name} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #eee", fontSize: 14 }}>
+                  <div>
+                    <b>{item.bottle_name}</b>
+                    {item.country && <span style={{ color: "#888", fontSize: 12 }}> ({item.country})</span>}
+                  </div>
+                  <span style={{ fontWeight: "bold", color: "#2d8a4e" }}>{item.rating}/10</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <div style={sectionCard}>
+          <h3 style={sectionTitle}>Full Inventory</h3>
+          <input type="text" value={search} onChange={function(e) { setSearch(e.target.value); }} placeholder="Search by name, country, winery..." style={{ width: "100%", padding: 10, fontSize: 14, borderRadius: 8, border: "1px solid #ccc", marginBottom: 12, boxSizing: "border-box" }} />
+          <p style={{ fontSize: 13, color: "#888", marginBottom: 8 }}>Showing {filtered.length} of {dashData.inventory.length} wines</p>
+          {filtered.map(function(item) {
+            return (
+              <div key={item.id} style={rowStyle}>
+                <div style={{ flex: 1 }}>
+                  <b>{item.name}</b>
+                  <span style={{ color: "#888", fontSize: 13 }}> ({item.country})</span>
+                  <div style={{ fontSize: 12, color: "#999" }}>{item.winery} | {item.grape}</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <button onClick={function() { startRateFromDashboard(item.name); }} style={rateBtn}>⭐</button>
+                  <div style={qtyBadge}>{item.qty_in_stock}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <button onClick={function() { setMode("home"); loadStats(); }} style={btnBack}>Back</button>
+      </div>
+    );
+  }
     var total = inventory.reduce(function(s, i) { return s + i.qty_in_stock; }, 0);
     return (
       <div style={pageStyle}>
@@ -280,4 +393,7 @@ var fieldInput = { width: "100%", padding: 8, fontSize: 15, borderRadius: 6, bor
 var numInput = { width: 80, padding: 8, fontSize: 16, textAlign: "center", borderRadius: 6, border: "1px solid #ccc" };
 var rowStyle = { display: "flex", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #eee" };
 var qtyBadge = { background: "#2d8a4e", color: "#fff", borderRadius: 20, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: 14 };
-var rateBtn = { background: "none", border: "1px solid #ddd", borderRadius: 6, padding: "4px 8px", fontSize: 16, cursor: "pointer" };
+var rateBtn = { background: "none", border: "1px solid #ddd", borderRadius: 6, padding: "4px 8px", fontSize: 16, cursor: "pointer" }
+var barColors = ["#2d8a4e","#c0392b","#2980b9","#f39c12","#8e44ad","#1abc9c","#d35400","#34495e","#e74c3c","#27ae60"];
+var sectionCard = { background: "#f9f9f9", padding: 16, borderRadius: 10, border: "1px solid #eee", marginBottom: 16 };
+var sectionTitle = { fontSize: 16, fontWeight: "bold", marginBottom: 12, color: "#333" };
