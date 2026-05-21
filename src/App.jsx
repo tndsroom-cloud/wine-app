@@ -2,6 +2,19 @@ import { useState, useRef, useEffect } from "react";
 
 var API = "https://wine-scan.tnd-sroom.workers.dev";
 
+function resizeImage(dataUrl, maxW, cb) {
+  var img = new Image();
+  img.onload = function() {
+    var c = document.createElement("canvas");
+    var s = img.width > maxW ? maxW / img.width : 1;
+    c.width = img.width * s;
+    c.height = img.height * s;
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    cb(c.toDataURL("image/jpeg", 0.7));
+  };
+  img.src = dataUrl;
+}
+
 export default function App() {
   var [wine, setWine] = useState(null);
   var [quantity, setQuantity] = useState(1);
@@ -21,19 +34,6 @@ export default function App() {
   }
 
   useEffect(function() { loadInventory(); loadStats(); }, []);
-
-  function resizeImage(dataUrl, maxW, cb) {
-    var img = new Image();
-    img.onload = function() {
-      var c = document.createElement("canvas");
-      var s = img.width > maxW ? maxW / img.width : 1;
-      c.width = img.width * s;
-      c.height = img.height * s;
-      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-      cb(c.toDataURL("image/jpeg", 0.7));
-    };
-    img.src = dataUrl;
-  }
 
   function handlePhoto(e) {
     var file = e.target.files[0];
@@ -93,17 +93,28 @@ export default function App() {
     if (fileInput.current) fileInput.current.value = "";
   }
 
-  // HOME
   if (mode === "home") {
     return (
       <div style={pageStyle}>
         <h1 style={{ fontSize: 28 }}>Wine Agent</h1>
         {stats && (
           <div style={statsBox}>
-            <div style={statItem}><span style={statNum}>{stats.inventory ? stats.inventory.total_bottles : 0}</span><span style={statLabel}>Bottles</span></div>
-            <div style={statItem}><span style={statNum}>{stats.inventory ? stats.inventory.unique_wines : 0}</span><span style={statLabel}>Wines</span></div>
-            <div style={statItem}><span style={statNum}>{stats.orders ? stats.orders.total_orders : 0}</span><span style={statLabel}>Orders</span></div>
-            <div style={statItem}><span style={statNum}>{stats.ratings && stats.ratings.avg_rating ? stats.ratings.avg_rating.toFixed(1) : "—"}</span><span style={statLabel}>Avg Rating</span></div>
+            <div style={statItem}>
+              <span style={statNum}>{stats.inventory ? stats.inventory.total_bottles : 0}</span>
+              <span style={statLabel}>Bottles</span>
+            </div>
+            <div style={statItem}>
+              <span style={statNum}>{stats.inventory ? stats.inventory.unique_wines : 0}</span>
+              <span style={statLabel}>Wines</span>
+            </div>
+            <div style={statItem}>
+              <span style={statNum}>{stats.orders ? stats.orders.total_orders : 0}</span>
+              <span style={statLabel}>Orders</span>
+            </div>
+            <div style={statItem}>
+              <span style={statNum}>{stats.ratings && stats.ratings.avg_rating ? stats.ratings.avg_rating.toFixed(1) : "\u2014"}</span>
+              <span style={statLabel}>Avg Rating</span>
+            </div>
           </div>
         )}
         <button onClick={function() { setMode("scan"); }} style={btnPrimary}>Scan - Add Bottle</button>
@@ -113,15 +124,16 @@ export default function App() {
     );
   }
 
-  // SCAN / DRINK
   if (mode === "scan" || mode === "drink") {
     return (
       <div style={pageStyle}>
         <h1>{mode === "scan" ? "Scan - Add" : "Drink"}</h1>
         <input type="file" accept="image/*" capture="environment" ref={fileInput} onChange={handlePhoto} style={{ display: "none" }} />
-        {!wine && !loading && <button onClick={function() { fileInput.current.click(); }} style={btnPrimary}>Open Camera</button>}
+        {!wine && !loading && (
+          <button onClick={function() { fileInput.current.click(); }} style={btnPrimary}>Open Camera</button>
+        )}
         {loading && <p style={{ fontSize: 18, color: "#666" }}>Identifying wine...</p>}
-        {{photo && <img src={photo} style={{ maxWidth: "100%", borderRadius: 8, marginTop: 10 }} />}
+        {photo && <img src={photo} style={{ maxWidth: "100%", borderRadius: 8, marginTop: 10 }} />}
         {wine && (
           <div style={cardStyle}>
             <p style={{ fontSize: 20, fontWeight: "bold", marginBottom: 8 }}>{wine.name || "Unknown"}</p>
@@ -145,7 +157,6 @@ export default function App() {
     );
   }
 
-  // DASHBOARD
   if (mode === "dashboard") {
     var total = inventory.reduce(function(s, i) { return s + i.qty_in_stock; }, 0);
     return (
