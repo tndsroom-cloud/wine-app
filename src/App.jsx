@@ -121,7 +121,7 @@ export default function App() {
         <input type="file" accept="image/*" capture="environment" ref={fileInput} onChange={handlePhoto} style={{ display: "none" }} />
         {!wine && !loading && <button onClick={function() { fileInput.current.click(); }} style={btnPrimary}>Open Camera</button>}
         {loading && <p style={{ fontSize: 18, color: "#666" }}>Identifying wine...</p>}
-        {photo && <img src={photo} style={{ maxWidth: "100%", borderRadius: 8, marginTop: 10 }} />}
+        {{photo && <img src={photo} style={{ maxWidth: "100%", borderRadius: 8, marginTop: 10 }} />}
         {wine && (
           <div style={cardStyle}>
             <p style={{ fontSize: 20, fontWeight: "bold", marginBottom: 8 }}>{wine.name || "Unknown"}</p>
