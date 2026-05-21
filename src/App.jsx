@@ -29,6 +29,9 @@ export default function App() {
   var [editGrape, setEditGrape] = useState("");
   var [editYear, setEditYear] = useState("");
   var [editCategory, setEditCategory] = useState("");
+  var [ratingName, setRatingName] = useState("");
+  var [ratingScore, setRatingScore] = useState(0);
+  var [ratingNotes, setRatingNotes] = useState("");
   var fileInput = useRef(null);
 
   function loadInventory() {
@@ -80,12 +83,8 @@ export default function App() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        name: editName,
-        winery: editWinery,
-        category: editCategory,
-        country: editCountry,
-        grape: editGrape,
-        quantity: quantity
+        name: editName, winery: editWinery, category: editCategory,
+        country: editCountry, grape: editGrape, quantity: quantity
       })
     })
     .then(function() { resetScan(); loadInventory(); loadStats(); })
@@ -100,8 +99,37 @@ export default function App() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: editName, quantity: quantity })
     })
-    .then(function() { resetScan(); loadInventory(); loadStats(); })
+    .then(function() {
+      setRatingName(editName);
+      setRatingScore(0);
+      setRatingNotes("");
+      setPhoto(null); setDetected(false); setLoading(false);
+      setMode("rate");
+      loadInventory(); loadStats();
+    })
     .catch(function(err) { alert("Error: " + err.message); setLoading(false); });
+  }
+
+  function handleRate() {
+    if (ratingScore < 1) return;
+    fetch(API + "/rate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: ratingName, rating: ratingScore, notes: ratingNotes })
+    })
+    .then(function() { setMode("home"); loadStats(); })
+    .catch(function(err) { alert("Error: " + err.message); });
+  }
+
+  function skipRating() {
+    setMode("home"); loadStats();
+  }
+
+  function startRateFromDashboard(name) {
+    setRatingName(name);
+    setRatingScore(0);
+    setRatingNotes("");
+    setMode("rate");
   }
 
   function resetScan() {
@@ -155,34 +183,13 @@ export default function App() {
         {photo && <img src={photo} style={{ maxWidth: "100%", borderRadius: 8, marginTop: 10 }} />}
         {detected && (
           <div style={cardStyle}>
-            <div style={fieldRow}>
-              <label style={fieldLabel}>Name</label>
-              <input type="text" value={editName} onChange={function(e) { setEditName(e.target.value); }} style={fieldInput} />
-            </div>
-            <div style={fieldRow}>
-              <label style={fieldLabel}>Winery</label>
-              <input type="text" value={editWinery} onChange={function(e) { setEditWinery(e.target.value); }} style={fieldInput} />
-            </div>
-            <div style={fieldRow}>
-              <label style={fieldLabel}>Country</label>
-              <input type="text" value={editCountry} onChange={function(e) { setEditCountry(e.target.value); }} style={fieldInput} />
-            </div>
-            <div style={fieldRow}>
-              <label style={fieldLabel}>Grape</label>
-              <input type="text" value={editGrape} onChange={function(e) { setEditGrape(e.target.value); }} style={fieldInput} />
-            </div>
-            <div style={fieldRow}>
-              <label style={fieldLabel}>Year</label>
-              <input type="text" value={editYear} onChange={function(e) { setEditYear(e.target.value); }} style={fieldInput} />
-            </div>
-            <div style={fieldRow}>
-              <label style={fieldLabel}>Category</label>
-              <input type="text" value={editCategory} onChange={function(e) { setEditCategory(e.target.value); }} style={fieldInput} />
-            </div>
-            <div style={fieldRow}>
-              <label style={fieldLabel}>Quantity</label>
-              <input type="number" min="1" value={quantity} onChange={function(e) { setQuantity(Number(e.target.value)); }} style={numInput} />
-            </div>
+            <div style={fieldRow}><label style={fieldLabel}>Name</label><input type="text" value={editName} onChange={function(e) { setEditName(e.target.value); }} style={fieldInput} /></div>
+            <div style={fieldRow}><label style={fieldLabel}>Winery</label><input type="text" value={editWinery} onChange={function(e) { setEditWinery(e.target.value); }} style={fieldInput} /></div>
+            <div style={fieldRow}><label style={fieldLabel}>Country</label><input type="text" value={editCountry} onChange={function(e) { setEditCountry(e.target.value); }} style={fieldInput} /></div>
+            <div style={fieldRow}><label style={fieldLabel}>Grape</label><input type="text" value={editGrape} onChange={function(e) { setEditGrape(e.target.value); }} style={fieldInput} /></div>
+            <div style={fieldRow}><label style={fieldLabel}>Year</label><input type="text" value={editYear} onChange={function(e) { setEditYear(e.target.value); }} style={fieldInput} /></div>
+            <div style={fieldRow}><label style={fieldLabel}>Category</label><input type="text" value={editCategory} onChange={function(e) { setEditCategory(e.target.value); }} style={fieldInput} /></div>
+            <div style={fieldRow}><label style={fieldLabel}>Quantity</label><input type="number" min="1" value={quantity} onChange={function(e) { setQuantity(Number(e.target.value)); }} style={numInput} /></div>
             <div style={{ marginTop: 16 }}>
               {mode === "scan" && <button onClick={handleAdd} style={btnGreen}>Add to Inventory</button>}
               {mode === "drink" && <button onClick={handleDrink} style={btnRed}>Drink</button>}
@@ -190,6 +197,36 @@ export default function App() {
           </div>
         )}
         <button onClick={resetScan} style={btnBack}>Back</button>
+      </div>
+    );
+  }
+
+  if (mode === "rate") {
+    return (
+      <div style={pageStyle}>
+        <h1>Rate Wine</h1>
+        <div style={cardStyle}>
+          <p style={{ fontSize: 18, fontWeight: "bold", marginBottom: 16 }}>{ratingName}</p>
+          <p style={{ fontSize: 14, color: "#666", marginBottom: 12 }}>Tap to rate:</p>
+          <div style={{ display: "flex", justifyContent: "center", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
+            {[1,2,3,4,5,6,7,8,9,10].map(function(n) {
+              return (
+                <button key={n} onClick={function() { setRatingScore(n); }} style={{
+                  width: 40, height: 40, borderRadius: 20, border: "none", fontSize: 16, fontWeight: "bold", cursor: "pointer",
+                  background: ratingScore === n ? "#2d8a4e" : "#e0e0e0",
+                  color: ratingScore === n ? "#fff" : "#333"
+                }}>{n}</button>
+              );
+            })}
+          </div>
+          {ratingScore > 0 && <p style={{ textAlign: "center", fontSize: 20, fontWeight: "bold", color: "#2d8a4e" }}>Score: {ratingScore}/10</p>}
+          <div style={fieldRow}>
+            <label style={fieldLabel}>Notes (optional)</label>
+            <input type="text" value={ratingNotes} onChange={function(e) { setRatingNotes(e.target.value); }} placeholder="e.g. Fruity, smooth..." style={fieldInput} />
+          </div>
+          <button onClick={handleRate} style={btnGreen}>Save Rating</button>
+          <button onClick={skipRating} style={btnBack}>Skip</button>
+        </div>
       </div>
     );
   }
@@ -210,7 +247,10 @@ export default function App() {
                 <span style={{ color: "#888", fontSize: 13 }}> ({item.country})</span>
                 <div style={{ fontSize: 12, color: "#999" }}>{item.winery} | {item.grape}</div>
               </div>
-              <div style={qtyBadge}>{item.qty_in_stock}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <button onClick={function() { startRateFromDashboard(item.name); }} style={rateBtn}>⭐</button>
+                <div style={qtyBadge}>{item.qty_in_stock}</div>
+              </div>
             </div>
           );
         })}
@@ -240,3 +280,4 @@ var fieldInput = { width: "100%", padding: 8, fontSize: 15, borderRadius: 6, bor
 var numInput = { width: 80, padding: 8, fontSize: 16, textAlign: "center", borderRadius: 6, border: "1px solid #ccc" };
 var rowStyle = { display: "flex", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #eee" };
 var qtyBadge = { background: "#2d8a4e", color: "#fff", borderRadius: 20, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: 14 };
+var rateBtn = { background: "none", border: "1px solid #ddd", borderRadius: 6, padding: "4px 8px", fontSize: 16, cursor: "pointer" };
