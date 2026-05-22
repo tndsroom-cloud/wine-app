@@ -457,7 +457,7 @@ function loadDashboard() {
         <button onClick={function() { setMode("home"); loadStats(); }} style={btnBack}>Back</button>
       </div>
     );
-  }
+  
     var total = inventory.reduce(function(s, i) { return s + i.qty_in_stock; }, 0);
     return (
       <div style={pageStyle}>
