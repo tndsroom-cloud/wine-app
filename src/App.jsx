@@ -509,6 +509,7 @@ var qtyBadge = { background: "#2d8a4e", color: "#fff", borderRadius: 20, width: 
 var rateBtn = { background: "none", border: "1px solid #ddd", borderRadius: 6, padding: "4px 8px", fontSize: 16, cursor: "pointer" }
 var barColors = ["#2d8a4e","#c0392b","#2980b9","#f39c12","#8e44ad","#1abc9c","#d35400","#34495e","#e74c3c","#27ae60"];
 var sectionCard = { background: "#f9f9f9", padding: 16, borderRadius: 10, border: "1px solid #eee", marginBottom: 16 };
-var sectionTitle = { fontSize: 16, fontWeight: "bold", marginBottom: 12, color: "#333" ;}var thStyle = { padding: "10px 8px", textAlign: "left", fontSize: 13, fontWeight: "bold", whiteSpace: "nowrap" };
+var sectionTitle = { fontSize: 16, fontWeight: "bold", marginBottom: 12, color: "#333" };
+var thStyle = { padding: "10px 8px", textAlign: "left", fontSize: 13, fontWeight: "bold", whiteSpace: "nowrap" };
 var tdStyle = { padding: "8px", fontSize: 13, verticalAlign: "middle" };
 var tdCenter = { padding: "8px", fontSize: 13, textAlign: "center", verticalAlign: "middle" };
