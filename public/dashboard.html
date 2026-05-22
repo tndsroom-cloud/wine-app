@@ -12,6 +12,14 @@
     th { background: #2c3e50; color: white; padding: 10px; text-align: right; }
     td { padding: 10px; border-bottom: 1px solid #eee; text-align: right; }
     tr:hover { background: #f1f1f1; }
+    .btn-received {
+      background: #2d8a4e; color: white; border: none;
+      padding: 6px 14px; border-radius: 6px; cursor: pointer;
+      font-size: 13px; font-weight: bold;
+    }
+    .btn-received:hover { background: #236b3e; }
+    .status-ordered { color: #e67e22; font-weight: bold; }
+    .status-received { color: #2d8a4e; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -34,50 +42,16 @@
       <th>מחיר</th>
       <th>כמות</th>
       <th>מקור</th>
+      <th>סטטוס</th>
+      <th>פעולה</th>
     </tr>
   </thead>
   <tbody id="tableBody"></tbody>
 </table>
 
 <script>
-const API = "https://wine-scan.tnd-sroom.workers.dev";
+var API = "https://wine-scan.tnd-sroom.workers.dev";
 
 async function load() {
   try {
-    const dashRes = await fetch(API + "/dashboard");
-    const dash = await dashRes.json();
-    document.getElementById("total").innerText = dash.totalBottles;
-    document.getElementById("avg").innerText = dash.avgRating;
-  } catch (e) {
-    console.log("dashboard error", e);
-  }
-
-  try {
-    const res = await fetch(API + "/bottles");
-    const bottles = await res.json();
-    const tbody = document.getElementById("tableBody");
-    tbody.innerHTML = "";
-
-    bottles.forEach(function(b) {
-      var row = "<tr>" +
-        "<td>" + (b.name || "") + "</td>" +
-        "<td>" + (b.winery || "") + "</td>" +
-        "<td>" + (b.category || "") + "</td>" +
-        "<td>" + (b.country || "") + "</td>" +
-        "<td>" + (b.grape || "") + "</td>" +
-        "<td>" + (b.unit_price || "") + "</td>" +
-        "<td>" + (b.quantity || "") + "</td>" +
-        "<td>" + (b.source || "") + "</td>" +
-        "</tr>";
-      tbody.innerHTML += row;
-    });
-  } catch (e) {
-    console.log("bottles error", e);
-  }
-}
-
-load();
-</script>
-
-</body>
-</html>
+    var
