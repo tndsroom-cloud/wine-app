@@ -1,0 +1,125 @@
+<!DOCTYPE html><!DOCTYPE lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>Wine Dashboard</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      padding: 20px;
+      background: #f4f6f8;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    .cards {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      flex: 1;
+      font-size: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    th {
+      background: #2c3e50;
+      color: white;
+      padding: 10px;
+      text-align: right;
+    }
+
+    td {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+    }
+
+    tr:hover {
+      background: #f1f1f1;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>📊 הדשבורד שלי</h1>
+
+<div class="cards">
+  <div class="card">סה״כ בקבוקים: <span id="total">טוען...</span></div>
+  <div class="card">דירוג ממוצע: <span id="avg">טוען...</span></div>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>שם היין</th>
+      <th>יקב</th>
+      <th>מדינה</th>
+      <th>שנה</th>
+      <th>דירוג</th>
+      <th>מחיר</th>
+      <th>סטטוס</th>
+    </tr>
+  </thead>
+  <tbody id="tableBody"></tbody>
+</table>
+
+<script>
+const API = "https://wine-scan.tnd-sroom.workers.dev";
+
+async function load() {
+  try {
+    const dashRes = await fetch(API + "/dashboard");
+    const dash = await dashRes.json();
+
+    document.getElementById("total").innerText = dash.totalBottles;
+    document.getElementById("avg").innerText = dash.avgRating;
+
+    // אם אין endpoint כזה עדיין — הטבלה תישאר ריקה
+    const res = await fetch(API + "/bottles");
+    const bottles = await res.json();
+
+    const tbody = document.getElementById("tableBody");
+    tbody.innerHTML = "";
+
+    bottles.forEach(b => {
+      const row = `
+        <tr>
+          <td>${b.name || ""}</td>
+          <td>${b.winery || ""}</td>
+          <td>${b.country || ""}</td>
+          <td>${b.year || ""}</td>
+          <td>${b.rating || ""}</td>
+          <td>${b.price || ""}</td>
+          <td>${b.status || ""}</td>
+        </tr>
+      `;
+      tbody.innerHTML += row;
+    });
+
+  } catch (err) {
+    console.error(err);
+    alert("שגיאה בטעינת הנתונים");
+  }
+}
+
+load();
+</script>
+
+</body>
+</html>
