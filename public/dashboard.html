@@ -49,3 +49,83 @@
 
 <script>
 var API = "https://wine-scan.tnd-sroom.workers.dev";
+function updateRating(id, rating) {
+  fetch(API + "/update-rating", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id: id, rating: parseFloat(rating) })
+  });
+}
+
+function markReceived(id, btn) {
+  fetch(API + "/update-status", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id: id, status: "התקבל" })
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (data.success) {
+      var row = btn.closest("tr");
+      var cell = row.querySelector(".status-cell");
+      cell.innerHTML = '<span class="status-received">✅ התקבל</span>';
+    }
+  });
+}
+
+async function load() {
+  try {
+    var dashRes = await fetch(API + "/dashboard");
+    var dash = await dashRes.json();
+    document.getElementById("total").innerText = dash.totalBottles;
+    document.getElementById("avg").innerText = dash.avgRating;
+  } catch (e) {
+    console.log("dashboard error", e);
+  }
+
+  try {
+    var res = await fetch(API + "/bottles");
+    var bottles = await res.json();
+    var tbody = document.getElementById("tableBody");
+    tbody.innerHTML = "";
+
+    bottles.forEach(function(b) {
+      var statusHTML = "";
+      if (b.status === "התקבל") {
+        statusHTML = '<span class="status-received">✅ התקבל</span>';
+      } else {
+        statusHTML = '<span class="status-ordered">📧 הוזמן</span> <button class="btn-received" onclick="markReceived(' + b.id + ', this)">התקבל</button>';
+      }
+
+      var ratingVal = b.rating || 0;
+      var options = "";
+      for (var r = 0; r <= 10; r++) {
+        var sel = (r == ratingVal) ? " selected" : "";
+        options += "<option value='" + r + "'" + sel + ">" + r + "</option>";
+      }
+      var ratingHTML = "<select class='rating-select' onchange='updateRating(" + b.id + ", this.value)'>" + options + "</select>";
+
+      var row = "<tr>" +
+        "<td>" + (b.name || "") + "</td>" +
+        "<td>" + (b.winery || "") + "</td>" +
+        "<td>" + (b.category || "") + "</td>" +
+        "<td>" + (b.country || "") + "</td>" +
+        "<td>" + (b.grape || "") + "</td>" +
+        "<td>" + (b.unit_price || "") + "</td>" +
+        "<td>" + (b.quantity || "") + "</td>" +
+        "<td>" + (b.source || "") + "</td>" +
+        '<td class="status-cell">' + statusHTML + '</td>' +
+        "<td>" + ratingHTML + "</td>" +
+        "</tr>";
+      tbody.innerHTML += row;
+    });
+  } catch (e) {
+    console.log("bottles error", e);
+  }
+}
+
+load();
+</script>
+
+</body>
+</html>
